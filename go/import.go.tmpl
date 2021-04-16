@@ -10,5 +10,5 @@ import (
 
 func init() {
 	// Only the init function can be tweaked by plugin maker.
-	options = append(options, flutter.AddPlugin(&vibrato.VibratoPlugin{}))
+	options = append(options, flutter.AddPlugin(vibrato.New()))
 }
