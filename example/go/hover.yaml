@@ -1,0 +1,9 @@
+application-name: "warble" # Uncomment to modify this value.
+executable-name: "warble_example" # Uncomment to modify this value. Only lowercase a-z, numbers, underscores and no spaces
+package-name: "warbleexample" # Uncomment to modify this value. Only lowercase a-z, numbers and no underscores or spaces
+organization-name: "com.warbleexample"
+license: "" # MANDATORY: Fill in your SPDX license name: https://spdx.org/licenses
+target: lib/main_desktop.dart
+# opengl: "none" # Uncomment this line if you have trouble with your OpenGL driver (https://github.com/go-flutter-desktop/go-flutter/issues/272)
+docker: false
+engine-version: "" # change to a engine version commit

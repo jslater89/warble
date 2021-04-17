@@ -169,8 +169,8 @@ func (p *WarblePlugin) handlePlayBuffered(arguments interface{}) (reply interfac
 	from := int(args["from"].(int32))
 	to := int(args["to"].(int32))
 
-	stream.PlayBuffer(from, to)
-	return nil, nil
+	err = stream.PlayBuffer(from, to)
+	return nil, err
 }
 
 func (p *WarblePlugin) handleStreamInfo(arguments interface{}) (reply interface{}, err error) {
@@ -207,6 +207,7 @@ func (p *WarblePlugin) handleListStreams(arguments interface{}) (reply interface
 	return streams, nil
 }
 
+// Plugin code should only lock in WarbleEffects methods.
 type WarbleEffects struct {
 	ID         uuid.UUID
 	Name       string
@@ -236,6 +237,9 @@ func NewBufferedEffects(id uuid.UUID, name string, sampleRate beep.SampleRate, b
 }
 
 func (e *WarbleEffects) Len() int {
+	if e.Buffered() {
+		return e.buffer.Len()
+	}
 	return e.streamer.Len()
 }
 
@@ -244,6 +248,10 @@ func (e *WarbleEffects) Position() int {
 }
 
 func (e *WarbleEffects) Play() {
+	if e.Len() == e.Position() {
+		e.Seek(0)
+	}
+
 	speaker.Play(e.streamer)
 }
 
@@ -284,6 +292,10 @@ func (e *WarbleEffects) Info() map[interface{}]interface{} {
 	response["position"] = int64(e.streamer.Position())
 	response["length"] = int64(e.streamer.Len())
 	response["sampleRate"] = int64(e.SampleRate)
-	response["buffered"] = e.buffer != nil
+	response["buffered"] = e.Buffered()
 	return response
+}
+
+func (e *WarbleEffects) Buffered() bool {
+	return e.buffer != nil
 }

@@ -68,7 +68,7 @@ class Warble {
     var result = await ensureAsset(source, name);
     if(!result) return null;
 
-    return wrapFile(File(await _cachedPath(name)), name: name);
+    return wrapFile(File(await _cachedPath(name)), name: name, buffered: buffered);
   }
 
   /// wrapFile accepts a file and returns a [WarbleStream] which can be used to play it.
@@ -84,7 +84,7 @@ class Warble {
     String n = name ?? file.path;
 
     try {
-      var info = await channel.invokeMapMethod<String, dynamic>('wrapFile', {'name': n, 'file': file.absolute.path, 'buffered': false});
+      var info = await channel.invokeMapMethod<String, dynamic>('wrapFile', {'name': n, 'file': file.absolute.path, 'buffered': buffered});
       if(info == null) return null;
       return WarbleStream.fromInfo(StreamInfo.fromMap(info));
     }
@@ -103,7 +103,7 @@ class Warble {
   /// for more.
   static Future<WarbleStream?> wrapBuffer(String name, Uint8List buffer, AudioFormat format, {bool buffered = true}) async {
     try {
-      var info = await channel.invokeMapMethod<String, dynamic>('wrapBuffer', {'name': name, 'buffer': buffer, 'format': format.toChannelString(), 'buffered': true});
+      var info = await channel.invokeMapMethod<String, dynamic>('wrapBuffer', {'name': name, 'buffer': buffer, 'format': format.toChannelString(), 'buffered': buffered});
       if(info == null) return null;
       return WarbleStream.fromInfo(StreamInfo.fromMap(info));
     }
@@ -166,7 +166,7 @@ class StreamMethods {
 
   static Future<bool> playBuffered(String id, int from, int to) async {
     try {
-      await channel.invokeMethod('playStream', {'id': id, 'from': from, 'to': to});
+      await channel.invokeMethod('playBuffered', {'id': id, 'from': from, 'to': to});
       return true;
     }
     catch(err) {

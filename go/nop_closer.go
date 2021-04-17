@@ -2,7 +2,6 @@ package warble
 
 import (
 	"github.com/faiface/beep"
-	"github.com/faiface/beep/speaker"
 )
 
 type WarbleNopCloser struct {
@@ -24,9 +23,7 @@ func (e WarbleNopCloser) Position() int {
 }
 
 func (e WarbleNopCloser) Seek(p int) error {
-	speaker.Lock()
 	err := e.streamer.Seek(p)
-	speaker.Unlock()
 	return err
 }
 

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:async';
+
+import 'package:warble/warble.dart';
 
 void main() {
   runApp(MyApp());
@@ -11,26 +14,35 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
-
   @override
   void initState() {
     super.initState();
-    initPlatformState();
+    example();
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion = "";
-    // Platform messages may fail, so we use a try/catch PlatformException.
+  String _text = "Playing!";
 
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
+  Future<void> example() async {
+    WarbleStream stream = (await Warble.wrapAsset(rootBundle, "assets/chime.wav", buffered: true))!;
 
-    setState(() {
-      _platformVersion = platformVersion;
+    stream.play();
+    Future.delayed(Duration(seconds:3)).then((_) {
+      stream.playBuffered(0, stream.length);
+      setState(() {
+        _text = "Playing buffered";
+      });
+    });
+    Future.delayed(Duration(seconds:6)).then((_) {
+      stream.play();
+      setState(() {
+        _text = "Seeking and replaying";
+      });
+    });
+    Future.delayed(Duration(milliseconds:7500)).then((_) {
+      stream.seek(0);
+      setState(() {
+        _text = "Seeking during playback";
+      });
     });
   }
 
@@ -42,7 +54,7 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: Text(_text),
         ),
       ),
     );
