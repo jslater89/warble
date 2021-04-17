@@ -51,35 +51,36 @@ class Warble {
     }
   }
 
-  static Future<WarbleStream?> playAsset(AssetBundle source, String name) async {
+  static Future<WarbleStream?> wrapAsset(AssetBundle source, String name) async {
     var result = await ensureAsset(source, name);
     if(!result) return null;
 
-    return playFile(name, File(await _cachedPath(name)));
+    return wrapFile(name, File(await _cachedPath(name)));
   }
 
-  static Future<WarbleStream?> playFile(String name, File file) async {
+  static Future<WarbleStream?> wrapFile(String name, File file, {bool buffered = false}) async {
     try {
-      var id = await channel.invokeMethod<String>('playFile', {'name': name, 'file': file.absolute.path});
-      if(id == null) return null;
-      return WarbleStream(id, name: name);
+      var info = await channel.invokeMapMethod<String, dynamic>('wrapFile', {'name': name, 'file': file.absolute.path, 'buffered': false});
+      if(info == null) return null;
+      return WarbleStream.fromInfo(StreamInfo.fromMap(info));
     }
     catch(err) {
       return null;
     }
   }
 
-  static Future<WarbleStream?> playBuffer(String name, Uint8List buffer, AudioFormat format) async {
+  static Future<WarbleStream?> wrapBuffer(String name, Uint8List buffer, AudioFormat format, {bool buffered = true}) async {
     try {
-      var id = await channel.invokeMethod<String>('playBuffer', {'name': name, 'buffer': buffer, 'format': format.toChannelString()});
-      if(id == null) return null;
-      return WarbleStream(id, name: name);
+      var info = await channel.invokeMapMethod<String, dynamic>('wrapBuffer', {'name': name, 'buffer': buffer, 'format': format.toChannelString(), 'buffered': true});
+      if(info == null) return null;
+      return WarbleStream.fromInfo(StreamInfo.fromMap(info));
     }
     catch(err) {
       return null;
     }
   }
 
+  // TODO: return info
   static Future<List<WarbleStream>> listStreams() async {
     try {
       var ids = await channel.invokeMapMethod<String, String>('listStreams');
@@ -95,6 +96,26 @@ class StreamMethods {
   static Future<bool> seekStream(String id, int position) async {
     try {
       await channel.invokeMethod('seekStream', {'id': id, 'position': position});
+      return true;
+    }
+    catch(err) {
+      return false;
+    }
+  }
+
+  static Future<bool> playStream(String id) async {
+    try {
+      await channel.invokeMethod('playStream', {'id': id});
+      return true;
+    }
+    catch(err) {
+      return false;
+    }
+  }
+
+  static Future<bool> playBuffered(String id, int from, int to) async {
+    try {
+      await channel.invokeMethod('playStream', {'id': id, 'from': from, 'to': to});
       return true;
     }
     catch(err) {
@@ -135,14 +156,18 @@ class StreamMethods {
 }
 
 class StreamInfo {
+  String id;
   String name;
   int position;
   int length;
   int sampleRate;
+  bool buffered;
 
   StreamInfo.fromMap(Map<String, dynamic> map) :
+      id = map["id"]!,
       name = map["name"]!,
       position = map["position"]!,
       length = map["length"]!,
-      sampleRate = map["sampleRate"];
+      sampleRate = map["sampleRate"],
+      buffered = map["buffered"]!;
 }

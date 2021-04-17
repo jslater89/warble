@@ -1,4 +1,4 @@
-package vibrato
+package warble
 
 import (
 	"bytes"
@@ -50,22 +50,23 @@ func decodeSource(name string, source io.ReadCloser) (s beep.StreamSeekCloser, f
 func (p *WarblePlugin) InitPlugin(messenger plugin.BinaryMessenger) error {
 	speaker.Init(beep.SampleRate(44100), 4410)
 	channel := plugin.NewMethodChannel(messenger, channelName, plugin.StandardMethodCodec{})
-	channel.HandleFunc("playFile", p.handlePlayFile)
-	channel.HandleFunc("playBuffer", p.handlePlayBuffer)
+	channel.HandleFunc("wrapFile", p.handleWrapFile)
+	channel.HandleFunc("wrapBuffer", p.handleWrapBuffer)
 	channel.HandleFunc("listStreams", p.handleListStreams)
 	channel.HandleFunc("closeStream", p.handleCloseStream)
 	channel.HandleFunc("pauseStream", p.handlePauseStream)
 	channel.HandleFunc("seekStream", p.handleSeekStream)
 	channel.HandleFunc("streamInfo", p.handleStreamInfo)
+	channel.HandleFunc("playStream", p.handlePlayStream)
+	channel.HandleFunc("playBuffered", p.handlePlayBuffered)
 	return nil
 }
 
-// TODO: return stream ID
-// TODO: get decoder by filename
-func (p *WarblePlugin) handlePlayFile(arguments interface{}) (reply interface{}, err error) {
+func (p *WarblePlugin) handleWrapFile(arguments interface{}) (reply interface{}, err error) {
 	args := arguments.(map[interface{}]interface{})
 	f, err := os.Open(args["file"].(string))
 	name := args["name"].(string)
+	buffered := args["buffered"].(bool)
 
 	if err != nil {
 		return nil, err
@@ -76,17 +77,24 @@ func (p *WarblePlugin) handlePlayFile(arguments interface{}) (reply interface{},
 	}
 
 	var id = uuid.New()
-	p.Streamers[id] = NewEffects(id, name, beepFmt.SampleRate, s)
+	if buffered {
+		buf := beep.NewBuffer(beepFmt)
+		buf.Append(s)
 
-	speaker.Play(p.Streamers[id])
-	return id.String(), nil
+		p.Streamers[id] = NewBufferedEffects(id, name, beepFmt.SampleRate, buf)
+	} else {
+		p.Streamers[id] = NewEffects(id, name, beepFmt.SampleRate, s)
+	}
+
+	return p.Streamers[id].Info(), nil
 }
 
-func (p *WarblePlugin) handlePlayBuffer(arguments interface{}) (reply interface{}, err error) {
+func (p *WarblePlugin) handleWrapBuffer(arguments interface{}) (reply interface{}, err error) {
 	args := arguments.(map[interface{}]interface{})
 	f := ioutil.NopCloser(bytes.NewReader(args["buffer"].([]byte)))
 	fmt := args["format"].(string)
 	name := args["name"].(string)
+	buffered := args["buffered"].(bool)
 
 	s, beepFmt, err := decodeSource(fmt, f)
 	if err != nil {
@@ -94,10 +102,16 @@ func (p *WarblePlugin) handlePlayBuffer(arguments interface{}) (reply interface{
 	}
 
 	var id = uuid.New()
-	p.Streamers[id] = NewEffects(id, name, beepFmt.SampleRate, s)
+	if buffered {
+		buf := beep.NewBuffer(beepFmt)
+		buf.Append(s)
 
-	speaker.Play(p.Streamers[id])
-	return id.String(), nil
+		p.Streamers[id] = NewBufferedEffects(id, name, beepFmt.SampleRate, buf)
+	} else {
+		p.Streamers[id] = NewEffects(id, name, beepFmt.SampleRate, s)
+	}
+
+	return p.Streamers[id].Info(), nil
 }
 
 func (p *WarblePlugin) handleCloseStream(arguments interface{}) (reply interface{}, err error) {
@@ -135,18 +149,37 @@ func (p *WarblePlugin) handleSeekStream(arguments interface{}) (reply interface{
 	return nil, nil
 }
 
+func (p *WarblePlugin) handlePlayStream(arguments interface{}) (reply interface{}, err error) {
+	stream, err := p.getStream(arguments)
+	if err != nil {
+		return nil, err
+	}
+
+	stream.Play()
+	return nil, nil
+}
+
+func (p *WarblePlugin) handlePlayBuffered(arguments interface{}) (reply interface{}, err error) {
+	args := arguments.(map[interface{}]interface{})
+	stream, err := p.getStream(arguments)
+	if err != nil {
+		return nil, err
+	}
+
+	from := int(args["from"].(int32))
+	to := int(args["to"].(int32))
+
+	stream.PlayBuffer(from, to)
+	return nil, nil
+}
+
 func (p *WarblePlugin) handleStreamInfo(arguments interface{}) (reply interface{}, err error) {
 	stream, err := p.getStream(arguments)
 	if err != nil {
 		return nil, err
 	}
 
-	response := map[interface{}]interface{}{}
-	response["name"] = stream.Name
-	response["position"] = int64(stream.Position())
-	response["length"] = int64(stream.Len())
-	response["sampleRate"] = int64(stream.SampleRate)
-	return response, nil
+	return stream.Info(), nil
 }
 
 func (p *WarblePlugin) getStream(arguments interface{}) (stream *WarbleEffects, err error) {
@@ -179,6 +212,7 @@ type WarbleEffects struct {
 	Name       string
 	SampleRate beep.SampleRate
 	streamer   beep.StreamSeekCloser
+	buffer     *beep.Buffer
 }
 
 func NewEffects(id uuid.UUID, name string, sampleRate beep.SampleRate, streamer beep.StreamSeekCloser) *WarbleEffects {
@@ -190,12 +224,38 @@ func NewEffects(id uuid.UUID, name string, sampleRate beep.SampleRate, streamer 
 	}
 }
 
+func NewBufferedEffects(id uuid.UUID, name string, sampleRate beep.SampleRate, buffer *beep.Buffer) *WarbleEffects {
+	streamer := WrapWithNop(buffer.Streamer(0, buffer.Len()))
+	return &WarbleEffects{
+		ID:         id,
+		Name:       name,
+		SampleRate: sampleRate,
+		buffer:     buffer,
+		streamer:   streamer,
+	}
+}
+
 func (e *WarbleEffects) Len() int {
 	return e.streamer.Len()
 }
 
 func (e *WarbleEffects) Position() int {
 	return e.streamer.Position()
+}
+
+func (e *WarbleEffects) Play() {
+	speaker.Play(e.streamer)
+}
+
+// TODO: gain, pan, etc
+func (e *WarbleEffects) PlayBuffer(from int, to int) error {
+	if e.buffer == nil {
+		return errors.New("this stream is not a buffer")
+	}
+
+	newStreamer := e.buffer.Streamer(from, to)
+	speaker.Play(newStreamer)
+	return nil
 }
 
 func (e *WarbleEffects) Seek(p int) error {
@@ -215,4 +275,15 @@ func (e *WarbleEffects) Err() error {
 
 func (e *WarbleEffects) Close() error {
 	return e.streamer.Close()
+}
+
+func (e *WarbleEffects) Info() map[interface{}]interface{} {
+	response := map[interface{}]interface{}{}
+	response["id"] = e.ID.String()
+	response["name"] = e.Name
+	response["position"] = int64(e.streamer.Position())
+	response["length"] = int64(e.streamer.Len())
+	response["sampleRate"] = int64(e.SampleRate)
+	response["buffered"] = e.buffer != nil
+	return response
 }
