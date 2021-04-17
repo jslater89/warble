@@ -61,6 +61,14 @@ class WarbleStream {
   ///
   /// Any changes to the effects settings for this [WarbleStream]
   /// (gain, pan, etc.) will affect the audio being played.
+  ///
+  /// Calling [play] on a stream that is already being played
+  /// will result in distorted playback. Use [update] to determine
+  /// if a stream is being played: if [position] is advancing, the
+  /// stream is being played.
+  ///
+  /// Calling [play] on a stream that has ended ([position] ==
+  /// [length]) will seek to position 0, then play.
   Future<bool> play() {
     return StreamMethods.playStream(id);
   }
