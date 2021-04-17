@@ -85,6 +85,20 @@ class WarbleStream {
     return StreamMethods.playBuffered(id, from, to);
   }
 
+  /// Sets the pan for this stream.
+  ///
+  /// -1 is entirely in the left channel, 1 is entirely in the right channel.
+  Future<bool> pan(double pan) {
+    return StreamMethods.panStream(id, pan);
+  }
+
+  /// Sets the gain for this stream.
+  ///
+  /// 0 is silent. 1 is original volume.
+  Future<bool> gain(double gain) {
+    return StreamMethods.gainStream(id, gain - 1);
+  }
+
   /// Closes this stream, releasing resources.
   Future<bool> close() {
     return StreamMethods.closeStream(id);

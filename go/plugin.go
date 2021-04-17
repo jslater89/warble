@@ -59,6 +59,8 @@ func (p *WarblePlugin) InitPlugin(messenger plugin.BinaryMessenger) error {
 	channel.HandleFunc("streamInfo", p.handleStreamInfo)
 	channel.HandleFunc("playStream", p.handlePlayStream)
 	channel.HandleFunc("playBuffered", p.handlePlayBuffered)
+	channel.HandleFunc("panStream", p.handlePanStream)
+	channel.HandleFunc("gainStream", p.handleGainStream)
 	return nil
 }
 
@@ -173,6 +175,32 @@ func (p *WarblePlugin) handlePlayBuffered(arguments interface{}) (reply interfac
 	return nil, err
 }
 
+func (p *WarblePlugin) handlePanStream(arguments interface{}) (reply interface{}, err error) {
+	args := arguments.(map[interface{}]interface{})
+	stream, err := p.getStream(arguments)
+	if err != nil {
+		return nil, err
+	}
+
+	pan := args["pan"].(float64)
+
+	err = stream.Pan(pan)
+	return nil, err
+}
+
+func (p *WarblePlugin) handleGainStream(arguments interface{}) (reply interface{}, err error) {
+	args := arguments.(map[interface{}]interface{})
+	stream, err := p.getStream(arguments)
+	if err != nil {
+		return nil, err
+	}
+
+	gain := args["gain"].(float64)
+
+	err = stream.Gain(gain)
+	return nil, err
+}
+
 func (p *WarblePlugin) handleStreamInfo(arguments interface{}) (reply interface{}, err error) {
 	stream, err := p.getStream(arguments)
 	if err != nil {
@@ -205,97 +233,4 @@ func (p *WarblePlugin) handleListStreams(arguments interface{}) (reply interface
 	}
 
 	return streams, nil
-}
-
-// Plugin code should only lock in WarbleEffects methods.
-type WarbleEffects struct {
-	ID         uuid.UUID
-	Name       string
-	SampleRate beep.SampleRate
-	streamer   beep.StreamSeekCloser
-	buffer     *beep.Buffer
-}
-
-func NewEffects(id uuid.UUID, name string, sampleRate beep.SampleRate, streamer beep.StreamSeekCloser) *WarbleEffects {
-	return &WarbleEffects{
-		ID:         id,
-		Name:       name,
-		SampleRate: sampleRate,
-		streamer:   streamer,
-	}
-}
-
-func NewBufferedEffects(id uuid.UUID, name string, sampleRate beep.SampleRate, buffer *beep.Buffer) *WarbleEffects {
-	streamer := WrapWithNop(buffer.Streamer(0, buffer.Len()))
-	return &WarbleEffects{
-		ID:         id,
-		Name:       name,
-		SampleRate: sampleRate,
-		buffer:     buffer,
-		streamer:   streamer,
-	}
-}
-
-func (e *WarbleEffects) Len() int {
-	if e.Buffered() {
-		return e.buffer.Len()
-	}
-	return e.streamer.Len()
-}
-
-func (e *WarbleEffects) Position() int {
-	return e.streamer.Position()
-}
-
-func (e *WarbleEffects) Play() {
-	if e.Len() == e.Position() {
-		e.Seek(0)
-	}
-
-	speaker.Play(e.streamer)
-}
-
-// TODO: gain, pan, etc
-func (e *WarbleEffects) PlayBuffer(from int, to int) error {
-	if e.buffer == nil {
-		return errors.New("this stream is not a buffer")
-	}
-
-	newStreamer := e.buffer.Streamer(from, to)
-	speaker.Play(newStreamer)
-	return nil
-}
-
-func (e *WarbleEffects) Seek(p int) error {
-	speaker.Lock()
-	err := e.streamer.Seek(p)
-	speaker.Unlock()
-	return err
-}
-
-func (e *WarbleEffects) Stream(samples [][2]float64) (n int, ok bool) {
-	return e.streamer.Stream(samples)
-}
-
-func (e *WarbleEffects) Err() error {
-	return e.streamer.Err()
-}
-
-func (e *WarbleEffects) Close() error {
-	return e.streamer.Close()
-}
-
-func (e *WarbleEffects) Info() map[interface{}]interface{} {
-	response := map[interface{}]interface{}{}
-	response["id"] = e.ID.String()
-	response["name"] = e.Name
-	response["position"] = int64(e.streamer.Position())
-	response["length"] = int64(e.streamer.Len())
-	response["sampleRate"] = int64(e.SampleRate)
-	response["buffered"] = e.Buffered()
-	return response
-}
-
-func (e *WarbleEffects) Buffered() bool {
-	return e.buffer != nil
 }

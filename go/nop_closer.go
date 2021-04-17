@@ -14,27 +14,27 @@ func WrapWithNop(streamer beep.StreamSeeker) WarbleNopCloser {
 	}
 }
 
-func (e WarbleNopCloser) Len() int {
+func (e *WarbleNopCloser) Len() int {
 	return e.streamer.Len()
 }
 
-func (e WarbleNopCloser) Position() int {
+func (e *WarbleNopCloser) Position() int {
 	return e.streamer.Position()
 }
 
-func (e WarbleNopCloser) Seek(p int) error {
+func (e *WarbleNopCloser) Seek(p int) error {
 	err := e.streamer.Seek(p)
 	return err
 }
 
-func (e WarbleNopCloser) Stream(samples [][2]float64) (n int, ok bool) {
+func (e *WarbleNopCloser) Stream(samples [][2]float64) (n int, ok bool) {
 	return e.streamer.Stream(samples)
 }
 
-func (e WarbleNopCloser) Err() error {
+func (e *WarbleNopCloser) Err() error {
 	return e.streamer.Err()
 }
 
-func (c WarbleNopCloser) Close() error {
+func (c *WarbleNopCloser) Close() error {
 	return nil
 }

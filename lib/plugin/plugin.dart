@@ -164,6 +164,26 @@ class StreamMethods {
     }
   }
 
+  static Future<bool> panStream(String id, double pan) async {
+    try {
+      await channel.invokeMethod('panStream', {'id': id, 'pan': pan});
+      return true;
+    }
+    catch(err) {
+      return false;
+    }
+  }
+
+  static Future<bool> gainStream(String id, double gain) async {
+    try {
+      await channel.invokeMethod('gainStream', {'id': id, 'gain': gain});
+      return true;
+    }
+    catch(err) {
+      return false;
+    }
+  }
+
   static Future<bool> playBuffered(String id, int from, int to) async {
     try {
       await channel.invokeMethod('playBuffered', {'id': id, 'from': from, 'to': to});
