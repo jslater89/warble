@@ -1,6 +1,6 @@
 name: warble
-description: An audio player for the go-flutter desktop engine, built on the beep library.
-version: 0.0.2-dev.1
+description: An audio-playing plugin for the go-flutter desktop embedding engine.
+version: 0.0.2
 repository: https://github.com/jslater89/warble
 
 environment:
