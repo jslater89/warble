@@ -3,11 +3,11 @@ import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:vibrato/stream/stream.dart';
-import 'package:vibrato/vibrato.dart';
+import 'package:warble/stream/stream.dart';
+import 'package:warble/warble.dart';
 
-const MethodChannel channel = const MethodChannel('vibrato');
-class Vibrato {
+const MethodChannel channel = const MethodChannel('warble');
+class Warble {
   static Future<Directory> _cachedAssetDir() async {
     Directory root = await getApplicationSupportDirectory();
     Directory assetCache = await Directory(root.path + Platform.pathSeparator + "asset-cache").create();
@@ -51,39 +51,39 @@ class Vibrato {
     }
   }
 
-  static Future<VibratoStream?> playAsset(AssetBundle source, String name) async {
+  static Future<WarbleStream?> playAsset(AssetBundle source, String name) async {
     var result = await ensureAsset(source, name);
     if(!result) return null;
 
     return playFile(name, File(await _cachedPath(name)));
   }
 
-  static Future<VibratoStream?> playFile(String name, File file) async {
+  static Future<WarbleStream?> playFile(String name, File file) async {
     try {
       var id = await channel.invokeMethod<String>('playFile', {'name': name, 'file': file.absolute.path});
       if(id == null) return null;
-      return VibratoStream(id, name: name);
+      return WarbleStream(id, name: name);
     }
     catch(err) {
       return null;
     }
   }
 
-  static Future<VibratoStream?> playBuffer(String name, Uint8List buffer, AudioFormat format) async {
+  static Future<WarbleStream?> playBuffer(String name, Uint8List buffer, AudioFormat format) async {
     try {
       var id = await channel.invokeMethod<String>('playBuffer', {'name': name, 'buffer': buffer, 'format': format.toChannelString()});
       if(id == null) return null;
-      return VibratoStream(id, name: name);
+      return WarbleStream(id, name: name);
     }
     catch(err) {
       return null;
     }
   }
 
-  static Future<List<VibratoStream>> listStreams() async {
+  static Future<List<WarbleStream>> listStreams() async {
     try {
       var ids = await channel.invokeMapMethod<String, String>('listStreams');
-      return ids?.map<String, VibratoStream>((id, name) => MapEntry(id, VibratoStream(id, name: name))).values.toList() ?? [];
+      return ids?.map<String, WarbleStream>((id, name) => MapEntry(id, WarbleStream(id, name: name))).values.toList() ?? [];
     }
     catch(err) {
       return [];

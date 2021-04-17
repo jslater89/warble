@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vibrato/vibrato.dart';
+import 'package:warble/warble.dart';
 
 void main() {
   const MethodChannel channel = MethodChannel('vibrato');

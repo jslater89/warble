@@ -1,6 +1,6 @@
-import 'package:vibrato/plugin/plugin.dart';
+import 'package:warble/plugin/plugin.dart';
 
-class VibratoStream {
+class WarbleStream {
   final String id;
   String name;
 
@@ -13,7 +13,7 @@ class VibratoStream {
   /// The sample rate of the stream in samples per second.
   int sampleRate = 0;
 
-  VibratoStream(this.id, {this.name = ""});
+  WarbleStream(this.id, {this.name = ""});
 
   double get percentage => position / (length == 0 ? 1 : length);
 

@@ -20,18 +20,18 @@ import (
 
 const channelName = "vibrato"
 
-// VibratoPlugin implements flutter.Plugin and handles method.
-type VibratoPlugin struct {
-	Streamers map[uuid.UUID]*VibratoEffects
+// WarblePlugin implements flutter.Plugin and handles method.
+type WarblePlugin struct {
+	Streamers map[uuid.UUID]*WarbleEffects
 }
 
-func New() *VibratoPlugin {
-	return &VibratoPlugin{
-		Streamers: map[uuid.UUID]*VibratoEffects{},
+func New() *WarblePlugin {
+	return &WarblePlugin{
+		Streamers: map[uuid.UUID]*WarbleEffects{},
 	}
 }
 
-var _ flutter.Plugin = &VibratoPlugin{} // compile-time type check
+var _ flutter.Plugin = &WarblePlugin{} // compile-time type check
 
 func decodeSource(name string, source io.ReadCloser) (s beep.StreamSeekCloser, fmt beep.Format, err error) {
 	n := strings.ToLower(name)
@@ -47,7 +47,7 @@ func decodeSource(name string, source io.ReadCloser) (s beep.StreamSeekCloser, f
 }
 
 // InitPlugin initializes the plugin.
-func (p *VibratoPlugin) InitPlugin(messenger plugin.BinaryMessenger) error {
+func (p *WarblePlugin) InitPlugin(messenger plugin.BinaryMessenger) error {
 	speaker.Init(beep.SampleRate(44100), 4410)
 	channel := plugin.NewMethodChannel(messenger, channelName, plugin.StandardMethodCodec{})
 	channel.HandleFunc("playFile", p.handlePlayFile)
@@ -62,7 +62,7 @@ func (p *VibratoPlugin) InitPlugin(messenger plugin.BinaryMessenger) error {
 
 // TODO: return stream ID
 // TODO: get decoder by filename
-func (p *VibratoPlugin) handlePlayFile(arguments interface{}) (reply interface{}, err error) {
+func (p *WarblePlugin) handlePlayFile(arguments interface{}) (reply interface{}, err error) {
 	args := arguments.(map[interface{}]interface{})
 	f, err := os.Open(args["file"].(string))
 	name := args["name"].(string)
@@ -82,7 +82,7 @@ func (p *VibratoPlugin) handlePlayFile(arguments interface{}) (reply interface{}
 	return id.String(), nil
 }
 
-func (p *VibratoPlugin) handlePlayBuffer(arguments interface{}) (reply interface{}, err error) {
+func (p *WarblePlugin) handlePlayBuffer(arguments interface{}) (reply interface{}, err error) {
 	args := arguments.(map[interface{}]interface{})
 	f := ioutil.NopCloser(bytes.NewReader(args["buffer"].([]byte)))
 	fmt := args["format"].(string)
@@ -100,7 +100,7 @@ func (p *VibratoPlugin) handlePlayBuffer(arguments interface{}) (reply interface
 	return id.String(), nil
 }
 
-func (p *VibratoPlugin) handleCloseStream(arguments interface{}) (reply interface{}, err error) {
+func (p *WarblePlugin) handleCloseStream(arguments interface{}) (reply interface{}, err error) {
 	stream, err := p.getStream(arguments)
 	if err != nil {
 		return nil, err
@@ -114,11 +114,11 @@ func (p *VibratoPlugin) handleCloseStream(arguments interface{}) (reply interfac
 	return nil, nil
 }
 
-func (p *VibratoPlugin) handlePauseStream(arguments interface{}) (reply interface{}, err error) {
+func (p *WarblePlugin) handlePauseStream(arguments interface{}) (reply interface{}, err error) {
 	return nil, errors.New("Not implemented")
 }
 
-func (p *VibratoPlugin) handleSeekStream(arguments interface{}) (reply interface{}, err error) {
+func (p *WarblePlugin) handleSeekStream(arguments interface{}) (reply interface{}, err error) {
 	stream, err := p.getStream(arguments)
 
 	if err != nil {
@@ -135,7 +135,7 @@ func (p *VibratoPlugin) handleSeekStream(arguments interface{}) (reply interface
 	return nil, nil
 }
 
-func (p *VibratoPlugin) handleStreamInfo(arguments interface{}) (reply interface{}, err error) {
+func (p *WarblePlugin) handleStreamInfo(arguments interface{}) (reply interface{}, err error) {
 	stream, err := p.getStream(arguments)
 	if err != nil {
 		return nil, err
@@ -149,7 +149,7 @@ func (p *VibratoPlugin) handleStreamInfo(arguments interface{}) (reply interface
 	return response, nil
 }
 
-func (p *VibratoPlugin) getStream(arguments interface{}) (stream *VibratoEffects, err error) {
+func (p *WarblePlugin) getStream(arguments interface{}) (stream *WarbleEffects, err error) {
 	args := arguments.(map[interface{}]interface{})
 	id, err := uuid.Parse(args["id"].(string))
 
@@ -164,7 +164,7 @@ func (p *VibratoPlugin) getStream(arguments interface{}) (stream *VibratoEffects
 	}
 }
 
-func (p *VibratoPlugin) handleListStreams(arguments interface{}) (reply interface{}, err error) {
+func (p *WarblePlugin) handleListStreams(arguments interface{}) (reply interface{}, err error) {
 	streams := map[interface{}]interface{}{}
 
 	for id, streamer := range p.Streamers {
@@ -174,15 +174,15 @@ func (p *VibratoPlugin) handleListStreams(arguments interface{}) (reply interfac
 	return streams, nil
 }
 
-type VibratoEffects struct {
+type WarbleEffects struct {
 	ID         uuid.UUID
 	Name       string
 	SampleRate beep.SampleRate
 	streamer   beep.StreamSeekCloser
 }
 
-func NewEffects(id uuid.UUID, name string, sampleRate beep.SampleRate, streamer beep.StreamSeekCloser) *VibratoEffects {
-	return &VibratoEffects{
+func NewEffects(id uuid.UUID, name string, sampleRate beep.SampleRate, streamer beep.StreamSeekCloser) *WarbleEffects {
+	return &WarbleEffects{
 		ID:         id,
 		Name:       name,
 		SampleRate: sampleRate,
@@ -190,29 +190,29 @@ func NewEffects(id uuid.UUID, name string, sampleRate beep.SampleRate, streamer 
 	}
 }
 
-func (e *VibratoEffects) Len() int {
+func (e *WarbleEffects) Len() int {
 	return e.streamer.Len()
 }
 
-func (e *VibratoEffects) Position() int {
+func (e *WarbleEffects) Position() int {
 	return e.streamer.Position()
 }
 
-func (e *VibratoEffects) Seek(p int) error {
+func (e *WarbleEffects) Seek(p int) error {
 	speaker.Lock()
 	err := e.streamer.Seek(p)
 	speaker.Unlock()
 	return err
 }
 
-func (e *VibratoEffects) Stream(samples [][2]float64) (n int, ok bool) {
+func (e *WarbleEffects) Stream(samples [][2]float64) (n int, ok bool) {
 	return e.streamer.Stream(samples)
 }
 
-func (e *VibratoEffects) Err() error {
+func (e *WarbleEffects) Err() error {
 	return e.streamer.Err()
 }
 
-func (e *VibratoEffects) Close() error {
+func (e *WarbleEffects) Close() error {
 	return e.streamer.Close()
 }

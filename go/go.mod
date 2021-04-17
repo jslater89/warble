@@ -1,4 +1,4 @@
-module github.com/jslater89/vibrato/go
+module github.com/jslater89/warble/go
 
 go 1.13
 

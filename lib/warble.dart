@@ -3,8 +3,8 @@
 // To add platforms, run `flutter create -t plugin --platforms <platforms> .` under the same
 // directory. You can also find a detailed instruction on how to add platforms in the `pubspec.yaml` at https://flutter.dev/docs/development/packages-and-plugins/developing-packages#plugin-platforms.
 
-export 'package:vibrato/plugin/plugin.dart' show Vibrato;
-export 'package:vibrato/stream/stream.dart' show VibratoStream;
+export 'package:warble/plugin/plugin.dart' show Warble;
+export 'package:warble/stream/stream.dart' show WarbleStream;
 
 enum AudioFormat {
   mp3,
