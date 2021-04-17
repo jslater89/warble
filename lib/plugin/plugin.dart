@@ -1,3 +1,6 @@
+/// {@nodoc}
+library plugin;
+
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -6,11 +9,15 @@ import 'package:path_provider/path_provider.dart';
 import 'package:warble/stream/stream.dart';
 import 'package:warble/warble.dart';
 
+/// {@nodoc}
 const MethodChannel channel = const MethodChannel('warble');
 
 /// Warble is a Flutter plugin for the go-flutter desktop embedding
 /// which can play audio from files, assets, or in-memory buffers.
 class Warble {
+
+  Warble._();
+
   static Future<Directory> _cachedAssetDir() async {
     Directory root = await getApplicationSupportDirectory();
     Directory assetCache = await Directory(root.path + Platform.pathSeparator + "asset-cache").create();
@@ -143,6 +150,7 @@ class Warble {
   }
 }
 
+/// {@nodoc}
 class StreamMethods {
   static Future<bool> seekStream(String id, int position) async {
     try {
@@ -226,6 +234,7 @@ class StreamMethods {
   }
 }
 
+/// {@nodoc}
 class StreamInfo {
   String id;
   String name;

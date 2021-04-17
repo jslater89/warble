@@ -1,3 +1,6 @@
+/// {@nodoc}
+library stream;
+
 import 'package:warble/plugin/plugin.dart';
 
 /// A WarbleStream encapsulates a loaded audio file.
