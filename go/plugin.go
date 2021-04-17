@@ -198,10 +198,10 @@ func (p *WarblePlugin) getStream(arguments interface{}) (stream *WarbleEffects, 
 }
 
 func (p *WarblePlugin) handleListStreams(arguments interface{}) (reply interface{}, err error) {
-	streams := map[interface{}]interface{}{}
+	streams := []interface{}{}
 
-	for id, streamer := range p.Streamers {
-		streams[id.String()] = streamer.Name
+	for _, streamer := range p.Streamers {
+		streams = append(streams, streamer.ID.String())
 	}
 
 	return streams, nil
