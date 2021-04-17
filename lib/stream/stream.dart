@@ -1,5 +1,6 @@
 import 'package:warble/plugin/plugin.dart';
 
+/// A WarbleStream 
 class WarbleStream {
   final String id;
   String name;
