@@ -18,7 +18,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const channelName = "vibrato"
+const channelName = "warble"
 
 // WarblePlugin implements flutter.Plugin and handles method.
 type WarblePlugin struct {
