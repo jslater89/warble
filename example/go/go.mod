@@ -1,4 +1,4 @@
-module vibrato_example/go
+module warble_example/go
 
 go 1.13
 
@@ -9,4 +9,4 @@ require (
 	github.com/pkg/errors v0.9.1
 )
 
-replace github.com/jslater89/warble/go => /home/jay/development/personal/warble/go
+replace github.com/jslater89/warble/go => ../../go

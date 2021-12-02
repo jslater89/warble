@@ -6,13 +6,12 @@ import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:warble/stream/stream.dart';
 import 'package:warble/warble.dart';
 
 /// {@nodoc}
 const MethodChannel channel = const MethodChannel('warble');
 
-/// Warble is a Flutter plugin for the go-flutter desktop embedding
+/// Warble is a Flutter src.plugin for the go-flutter desktop embedding
 /// which can play audio from files, assets, or in-memory buffers.
 class Warble {
 
@@ -202,9 +201,9 @@ class StreamMethods {
     }
   }
 
-  static Future<bool> pauseStream(String id) async {
+  static Future<bool> pauseStream(String id, bool pause) async {
     try {
-      await channel.invokeMethod('closeStream', {'id': id});
+      await channel.invokeMethod('pauseStream', {'id': id, 'pause': pause});
       return true;
     }
     catch(err) {

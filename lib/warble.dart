@@ -3,8 +3,8 @@
 /// plays audio from files, assets, and in-memory buffers.
 library warble;
 
-export 'package:warble/plugin/plugin.dart' show Warble;
-export 'package:warble/stream/stream.dart' show WarbleStream;
+export 'package:warble/src/plugin/plugin.dart' show Warble;
+export 'package:warble/src/stream/stream.dart' show WarbleStream;
 
 /// AudioFormat represents the audio formats supported by Warble.
 enum AudioFormat {

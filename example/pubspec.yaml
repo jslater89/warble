@@ -1,5 +1,5 @@
-name: vibrato_example
-description: Demonstrates how to use the vibrato plugin.
+name: warble_example
+description: Demonstrates how to use the warble plugin.
 
 publish_to: 'none'
 
@@ -25,4 +25,4 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/chime.wav
+    - assets/musicbox.mp3

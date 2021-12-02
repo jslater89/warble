@@ -14,6 +14,10 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+
+  late WarbleStream stream;
+  bool loaded = false;
+
   @override
   void initState() {
     super.initState();
@@ -23,38 +27,12 @@ class _MyAppState extends State<MyApp> {
   String _text = "Playing!";
 
   Future<void> example() async {
-    WarbleStream stream = (await Warble.wrapAsset(rootBundle, "assets/chime.wav", buffered: true))!;
+    var s = (await Warble.wrapAsset(rootBundle, "assets/musicbox.mp3", buffered: true))!;
 
-    await stream.gain(0.25);
-    await stream.pan(-1);
-    stream.play();
-    Future.delayed(Duration(seconds:3)).then((_) async {
-      await stream.gain(0.50);
-      await stream.pan(-0.25);
-      stream.playBuffered(0, stream.length);
-      setState(() {
-        _text = "Playing buffered";
-      });
+    setState(() {
+      stream = s;
+      loaded = true;
     });
-    Future.delayed(Duration(seconds:6)).then((_) async {
-      await stream.gain(0.875);
-      await stream.pan(0.25);
-      stream.play();
-      setState(() {
-        _text = "Seeking and replaying";
-      });
-    });
-    Future.delayed(Duration(milliseconds:7500)).then((_) async {
-      await stream.gain(1);
-      await stream.pan(1);
-      stream.seek(0);
-      setState(() {
-        _text = "Seeking during playback";
-      });
-    });
-    Future.delayed(Duration(milliseconds:10500)).then((_) => setState(() {
-      _text = "Done!";
-    }));
   }
 
   @override
@@ -65,9 +43,116 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text(_text),
+          child: !loaded ? Text("Loading...") : Player(stream: stream,)
         ),
       ),
+    );
+  }
+}
+
+class Player extends StatefulWidget {
+  const Player({Key? key, required this.stream}) : super(key: key);
+  final WarbleStream stream;
+
+  @override
+  _PlayerState createState() => _PlayerState();
+}
+
+class _PlayerState extends State<Player> {
+  bool paused = false;
+  bool playing = false;
+
+  double gain = 1;
+  double pan = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // update the stream about once per second
+    Timer.periodic(Duration(milliseconds: 16), (timer) async {
+      await widget.stream.update();
+
+      // plugin-level looping: a someday feature
+      if(widget.stream.position == widget.stream.length && playing) {
+        await widget.stream.seek(0);
+        widget.stream.play();
+      }
+      setState(() {
+      });
+    });
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text("Stream info"),
+        SizedBox(height: 5),
+        Text("Position/Length (samples): ${widget.stream.position}/${widget.stream.length}"),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextButton(
+              child: !playing ? Icon(Icons.play_arrow) : (playing && !paused ? Icon(Icons.pause) : Icon(Icons.play_arrow)),
+              onPressed: () async {
+                if(playing) {
+                  paused = !paused;
+                  var res = await widget.stream.pause(paused);
+                  setState(() {
+                    paused = paused;
+                  });
+                  debugPrint("Stream pause state: $paused $res");
+                }
+                else {
+                  var res = await widget.stream.play();
+                  debugPrint("Starting stream: $res");
+                  setState(() {
+                    playing = true;
+                  });
+                }
+              },
+            ),
+            TextButton(
+              child: Icon(Icons.stop),
+              onPressed: () {
+                setState(() {
+                  playing = false;
+                });
+                widget.stream.seek(widget.stream.length);
+              },
+            ),
+          ],
+        ),
+        Text("Gain: $gain", style: Theme.of(context).textTheme.caption,),
+        Slider(
+          value: gain,
+          onChanged: (v) {
+            setState(() {
+              gain = v;
+            });
+          },
+          onChangeEnd: (_) {
+            widget.stream.gain(gain);
+          },
+          min: 0,
+          max: 1.25,
+        ),
+        SizedBox(height: 5),
+        Text("Pan: $pan", style: Theme.of(context).textTheme.caption,),
+        Slider(
+          value: pan,
+          onChanged: (v) {
+            setState(() {
+              pan = v;
+            });
+          },
+          onChangeEnd: (_) {
+            widget.stream.pan(pan);
+          },
+          min: -1,
+          max: 1,
+        ),
+      ],
     );
   }
 }

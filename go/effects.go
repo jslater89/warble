@@ -11,13 +11,14 @@ import (
 
 // Plugin code should only lock in WarbleEffects methods.
 type WarbleEffects struct {
-	ID           uuid.UUID
-	Name         string
-	SampleRate   beep.SampleRate
-	baseStreamer beep.StreamSeekCloser
-	panStreamer  *effects.Pan
-	gainStreamer *effects.Gain
-	buffer       *beep.Buffer
+	ID            uuid.UUID
+	Name          string
+	SampleRate    beep.SampleRate
+	baseStreamer  beep.StreamSeekCloser
+	panStreamer   *effects.Pan
+	gainStreamer  *effects.Gain
+	pauseStreamer *beep.Ctrl
+	buffer        *beep.Buffer
 }
 
 func NewEffects(id uuid.UUID, name string, sampleRate beep.SampleRate, streamer beep.StreamSeekCloser) *WarbleEffects {
@@ -29,13 +30,18 @@ func NewEffects(id uuid.UUID, name string, sampleRate beep.SampleRate, streamer 
 		Streamer: &panStreamer,
 		Gain:     0,
 	}
+	pauseStreamer := beep.Ctrl{
+		Streamer: &gainStreamer,
+		Paused:   false,
+	}
 	return &WarbleEffects{
-		ID:           id,
-		Name:         name,
-		SampleRate:   sampleRate,
-		baseStreamer: streamer,
-		panStreamer:  &panStreamer,
-		gainStreamer: &gainStreamer,
+		ID:            id,
+		Name:          name,
+		SampleRate:    sampleRate,
+		baseStreamer:  streamer,
+		panStreamer:   &panStreamer,
+		gainStreamer:  &gainStreamer,
+		pauseStreamer: &pauseStreamer,
 	}
 }
 
@@ -49,14 +55,19 @@ func NewBufferedEffects(id uuid.UUID, name string, sampleRate beep.SampleRate, b
 		Streamer: &panStreamer,
 		Gain:     0,
 	}
+	pauseStreamer := beep.Ctrl{
+		Streamer: &gainStreamer,
+		Paused:   false,
+	}
 	return &WarbleEffects{
-		ID:           id,
-		Name:         name,
-		SampleRate:   sampleRate,
-		buffer:       buffer,
-		baseStreamer: &streamer,
-		panStreamer:  &panStreamer,
-		gainStreamer: &gainStreamer,
+		ID:            id,
+		Name:          name,
+		SampleRate:    sampleRate,
+		buffer:        buffer,
+		baseStreamer:  &streamer,
+		panStreamer:   &panStreamer,
+		gainStreamer:  &gainStreamer,
+		pauseStreamer: &pauseStreamer,
 	}
 }
 
@@ -76,7 +87,7 @@ func (e *WarbleEffects) Play() {
 		e.Seek(0)
 	}
 
-	speaker.Play(e.gainStreamer)
+	speaker.Play(e.pauseStreamer)
 }
 
 // TODO: gain, pan, etc
@@ -117,6 +128,14 @@ func (e *WarbleEffects) Seek(p int) error {
 	err := e.baseStreamer.Seek(p)
 	speaker.Unlock()
 	return err
+}
+
+func (e *WarbleEffects) Pause(pause bool) error {
+	speaker.Lock()
+	e.pauseStreamer.Paused = pause
+	speaker.Unlock()
+
+	return nil
 }
 
 func (e *WarbleEffects) Stream(samples [][2]float64) (n int, ok bool) {

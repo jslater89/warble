@@ -1,7 +1,7 @@
 /// {@nodoc}
 library stream;
 
-import 'package:warble/plugin/plugin.dart';
+import 'package:warble/src/plugin/plugin.dart';
 
 /// A WarbleStream encapsulates a loaded audio file.
 ///
@@ -66,7 +66,7 @@ class WarbleStream {
   /// (gain, pan, etc.) will affect the audio being played.
   ///
   /// Calling [play] on a stream that is already being played
-  /// will result in distorted playback. Use [update] to determine
+  /// will result in distorted playback. [update] may be used to determine
   /// if a stream is being played: if [position] is advancing, the
   /// stream is being played.
   ///
@@ -80,7 +80,7 @@ class WarbleStream {
   ///
   /// [from] and [to] indicate, in samples, where the stream should
   /// start playing and where it should stop. [from] must be less than [to],
-  /// [from] must be greater than 0, and to must be less than [length].
+  /// [from] must be greater than 0, and [to] must be less than [length].
   ///
   /// Copied streams cannot be controlled in any way: they inherit effects
   /// settings from their parent stream, and play in their entirety.
@@ -108,8 +108,8 @@ class WarbleStream {
   }
 
   /// Pauses this stream, silencing its output.
-  Future<bool> pause() {
-    return StreamMethods.pauseStream(id);
+  Future<bool> pause(bool pause) {
+    return StreamMethods.pauseStream(id, pause);
   }
 
   /// Seeks this stream, moving to [position] (given in samples).

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/faiface/beep"
+	"github.com/faiface/beep/flac"
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
 	"github.com/faiface/beep/vorbis"
@@ -41,6 +42,8 @@ func decodeSource(name string, source io.ReadCloser) (s beep.StreamSeekCloser, f
 		return wav.Decode(source)
 	} else if strings.HasSuffix(n, "ogg") {
 		return vorbis.Decode(source)
+	} else if strings.HasSuffix(n, "flac") {
+		return flac.Decode(source)
 	} else {
 		return nil, beep.Format{}, errors.New("unsupported stream")
 	}
@@ -131,7 +134,19 @@ func (p *WarblePlugin) handleCloseStream(arguments interface{}) (reply interface
 }
 
 func (p *WarblePlugin) handlePauseStream(arguments interface{}) (reply interface{}, err error) {
-	return nil, errors.New("Not implemented")
+	stream, err := p.getStream(arguments)
+
+	if err != nil {
+		return nil, err
+	}
+
+	args := arguments.(map[interface{}]interface{})
+	pause := args["pause"].(bool)
+	err = stream.Pause(pause)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
 }
 
 func (p *WarblePlugin) handleSeekStream(arguments interface{}) (reply interface{}, err error) {
