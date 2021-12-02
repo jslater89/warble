@@ -66,7 +66,7 @@ class Warble {
   /// which can be used to play the asset.
   ///
   /// [name] should have an extension corresponding to a supported file type: one of
-  /// .mp3, .wav, or .ogg.
+  /// .mp3, .wav, .ogg, or .flac.
   ///
   /// If [buffered] is true, Warble loads the asset as a buffered stream. See [WarbleStream]
   /// for more.
@@ -80,7 +80,9 @@ class Warble {
   /// wrapFile accepts a file and returns a [WarbleStream] which can be used to play it.
   ///
   /// [file]'s name should end in an extension corresponding to a supported file type: one of
-  /// .mp3, .wav, or .ogg.
+  /// .mp3, .wav, .ogg, or .flac.
+  ///
+  /// [file]'s path should use platform-specific path separators. See [Platform.pathSeparator].
   ///
   /// [name], if present, is used for [WarbleStream.name]. Otherwise, the file's path is used.
   ///

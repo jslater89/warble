@@ -111,7 +111,6 @@ func (e *WarbleEffects) Pan(pan float64) error {
 	speaker.Lock()
 	e.panStreamer.Pan = pan
 	speaker.Unlock()
-	println("Pan: {}", pan)
 	return nil
 }
 
@@ -119,7 +118,6 @@ func (e *WarbleEffects) Gain(gain float64) error {
 	speaker.Lock()
 	e.gainStreamer.Gain = gain
 	speaker.Unlock()
-	println("Gain: {}", gain)
 	return nil
 }
 
