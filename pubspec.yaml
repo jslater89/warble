@@ -1,6 +1,6 @@
 name: warble
 description: An audio-playing plugin for the go-flutter desktop embedding engine.
-version: 0.0.2
+version: 0.1.0
 repository: https://github.com/jslater89/warble
 
 environment:
